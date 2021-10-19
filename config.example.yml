@@ -5,8 +5,10 @@ schedule:
   delta: 12
 hosts:
   host1:
-    host: ipaddress
+    host: 1.2.3.4
+    user: user
     folder: /foo/bar
+    port: 22
     exclude:
     include:
 folders:
