@@ -10,6 +10,15 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 configFile = open('config.yml', 'r')
 config = yaml.load(configFile, Loader=yaml.FullLoader)
 
+
+def rsyncData(port, user, host, folderToBackup, destination):
+    args = ["rsync", "-arvz", "-e", "ssh -p "+str(port), "-r"]
+    args.append(user + "@" + host + ":"+folderToBackup)
+    args.append(destination)
+    print("executing " + ' '.join(args))
+    subprocess.call(args)
+
+
 destinationBase = config['folders']['path']
 destination = destinationBase.split("/", 1)
 if destination[0] == '.':
@@ -30,9 +39,4 @@ for i in config['hosts']:
     user = backho['user']
     folderToBackup = backho['folder']
     port = backho['port']
-
-args = ["rsync", "-arvz", "-e", "ssh -p "+str(port), "-r"]
-args.append(user + "@" + host + ":"+folderToBackup)
-args.append(destination)
-print("executing " + ' '.join(args))
-subprocess.call(args)
+    rsyncData(port, user, host, folderToBackup, destination)
