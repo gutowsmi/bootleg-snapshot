@@ -33,6 +33,7 @@ def managefolders(destination, prefix, nobackups):
     for dir in folders:
         if(re.match(regex, dir)):
             backupsInFolder.append(dir.split('.'))
+    backupsInFolder.sort()
     backupsInFolder = backupsInFolder[::-1]
     if len(backupsInFolder) != 0:
         for backup in backupsInFolder:
