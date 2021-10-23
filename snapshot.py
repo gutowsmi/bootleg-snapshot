@@ -72,4 +72,6 @@ for i in config['hosts']:
     user = backho['user']
     folderToBackup = backho['folder']
     port = backho['port']
-    rsyncData(port, user, host, folderToBackup, interbackup)
+    finaldest = os.path.join(interbackup, host)
+    createFolder(finaldest)
+    rsyncData(port, user, host, folderToBackup, finaldest)
