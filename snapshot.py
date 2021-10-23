@@ -9,7 +9,7 @@ else:
     print("No backup mode selected, please run file with arguments")
     exit()
 dir_path = os.path.dirname(os.path.realpath(__file__))
-configFile = open('config.yml', 'r')
+configFile = open(os.path.join(dir_path, 'config.yml'), 'r')
 config = yaml.load(configFile, Loader=yaml.FullLoader)
 
 nobackups = config['schedule'][mode]
