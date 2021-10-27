@@ -3,6 +3,7 @@ import yaml
 import sys
 import os
 import subprocess
+import shutil
 if len(sys.argv) != 1:
     mode = sys.argv[1]
 else:
@@ -15,8 +16,9 @@ config = yaml.load(configFile, Loader=yaml.FullLoader)
 nobackups = config['schedule'][mode]
 
 
-def rsyncData(port, user, host, folderToBackup, destination):
-    args = ["rsync", "-arvz", "-e", "ssh -p "+str(port), "-r"]
+def rsyncData(port, user, host, folderToBackup, destination, foldertolink):
+    args = ["rsync", "-arvz", "--link-dest=" +
+            foldertolink, "-e", "ssh -p "+str(port), "-r"]
     args.append(user + "@" + host + ":"+folderToBackup)
     args.append(destination)
     print("executing " + ' '.join(args))
@@ -26,26 +28,42 @@ def rsyncData(port, user, host, folderToBackup, destination):
 def managefolders(destination, prefix, nobackups):
     print(destination, prefix)
     regex = re.escape(prefix)+r"."
-    backupsInFolder = []
     initialfolder = os.path.join(destination, prefix+".0")
+    lastbackup = os.path.join(destination, prefix+".1")
 
-    folders = os.listdir(destination)
-    for dir in folders:
-        if(re.match(regex, dir)):
-            backupsInFolder.append(dir.split('.'))
-    backupsInFolder.sort()
-    backupsInFolder = backupsInFolder[::-1]
+    backupsInFolder = getfoldersindir(destination, regex)
     if len(backupsInFolder) != 0:
         for backup in backupsInFolder:
             iteration = int(backup[1])+1
             old = os.path.join(destination, (backup[0]+'.'+backup[1]))
             new = os.path.join(destination, (backup[0]+'.'+str(iteration)))
-            os.rename(old, new)
+            while True:
+                try:
+                    os.rename(old, new)
+                except:
+                    continue
+                break
             if iteration > int(nobackups):
-                os.rmdir(new)
+                shutil.rmtree(new)
     if not os.path.exists(initialfolder):
         os.mkdir(initialfolder)
-    return initialfolder
+        if not os.path.exists(lastbackup):
+            os.mkdir(initialfolder)
+        else:
+            args = ["cp", "-al", lastbackup, initialfolder]
+        subprocess.call(args)
+    return [initialfolder, lastbackup]
+
+
+def getfoldersindir(destination, regex):
+    folders = os.listdir(destination)
+    backupsInFolder = []
+    for dir in folders:
+        if(re.match(regex, dir)):
+            backupsInFolder.append(dir.split('.'))
+    backupsInFolder.sort()
+    backupsInFolder = backupsInFolder[::-1]
+    return backupsInFolder
 
 
 def createFolder(destination):
@@ -73,6 +91,7 @@ for i in config['hosts']:
     user = backho['user']
     folderToBackup = backho['folder']
     port = backho['port']
-    finaldest = os.path.join(interbackup, host)
+    finaldest = os.path.join(interbackup[0], host)
+    lastbackup = os.path.join(interbackup[1], host)
     createFolder(finaldest)
-    rsyncData(port, user, host, folderToBackup, finaldest)
+    rsyncData(port, user, host, folderToBackup, finaldest, lastbackup)
